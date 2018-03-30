@@ -4,17 +4,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 import it.polito.tdp.lab04.model.Corso;
-import it.polito.tdp.lab04.model.Studente;
 
 public class CorsoDAO {
 
-	/*
-	 * Ottengo tutti i corsi salvati nel Db
-	 */
 	public List<Corso> getTuttiICorsi() {
 
 		final String sql = "SELECT * FROM corso";
@@ -25,49 +22,62 @@ public class CorsoDAO {
 			Connection conn = ConnectDB.getConnection();
 			PreparedStatement st = conn.prepareStatement(sql);
 
-			ResultSet rs = st.executeQuery();
+			ResultSet res = st.executeQuery();
 
-			while (rs.next()) {
+			while (res.next()) {
 
-				String codins = rs.getString("codins");
-				int numeroCrediti = rs.getInt("crediti");
-				String nome = rs.getString("nome");
-				int periodoDidattico = rs.getInt("pd");
+				String codins = res.getString("codins");
+				int numeroCrediti = res.getInt("crediti");
+				String nome = res.getString("nome");
+				int periodoDidattico = res.getInt("pd");
 
-				System.out.println(codins + " " + numeroCrediti + " " + nome + " " + periodoDidattico);
-
-				// Crea un nuovo JAVA Bean Corso
-				// Aggiungi il nuovo oggetto Corso alla lista corsi
+				Corso c = new Corso(codins, nome, numeroCrediti, periodoDidattico);
+				corsi.add(c);
 			}
-
-			return corsi;
+			
+			conn.close();
+// ORDINAMENTO ALFABETICO DEL MENU' A TENDINA E IN CIMA UNA RIGA VUOTA
+			Collections.sort(corsi);
+			corsi.add(0, new Corso ());
 
 		} catch (SQLException e) {
 			// e.printStackTrace();
 			throw new RuntimeException("Errore Db");
 		}
+		
+		return corsi;
 	}
 
-	/*
-	 * Dato un codice insegnamento, ottengo il corso
-	 */
-	public void getCorso(Corso corso) {
-		// TODO
-	}
+	
+	public List<Corso> getCorsiByStudente(int matricola) {
+		
+		final String sql = "SELECT c.codins, crediti, nome, pd " +
+						   "FROM corso as c, iscrizione as i " +
+						   "WHERE c.codins = i.codins and matricola = ?" ;
 
-	/*
-	 * Ottengo tutti gli studenti iscritti al Corso
-	 */
-	public void getStudentiIscrittiAlCorso(Corso corso) {
-		// TODO
-	}
-
-	/*
-	 * Data una matricola ed il codice insegnamento, iscrivi lo studente al corso.
-	 */
-	public boolean inscriviStudenteACorso(Studente studente, Corso corso) {
-		// TODO
-		// ritorna true se l'iscrizione e' avvenuta con successo
-		return false;
+		List<Corso> corsi = new LinkedList<Corso>();
+		
+		try {
+			
+			Connection conn = ConnectDB.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, matricola);
+			
+			ResultSet res = st.executeQuery();
+		
+			while (res.next()) {
+				Corso c = new Corso (res.getString("codins"), res.getString("nome"),
+									res.getInt("crediti"), res.getInt("pd"));
+				
+				corsi.add(c);
+			}
+			
+			conn.close();
+			return corsi;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Errore Db");
+		}
 	}
 }
